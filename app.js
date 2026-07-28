@@ -2067,25 +2067,30 @@
       dom.addEventListener('touchend', () => { isTouchDragging = false; });
 
       if (this.app && this.app.isTouchDevice && window.nipplejs) {
-        const mc = document.getElementById('mobile-controls');
+        // Use museum-specific mobile controls (inside museum-modal, so visible on top)
+        const mc = document.getElementById('museum-mobile-controls');
         if (mc) mc.style.display = 'flex';
-        const speedControls = document.querySelector('.speed-controls');
-        if (speedControls) speedControls.style.display = 'none';
 
-        const manager = nipplejs.create({
-          zone: document.getElementById('joystick-zone'),
+        // Destroy previous joystick if exists
+        if (this._museumJoystick) {
+          this._museumJoystick.destroy();
+        }
+
+        this._museumJoystick = nipplejs.create({
+          zone: document.getElementById('museum-joystick-zone'),
           mode: 'static',
           position: { left: '75px', bottom: '75px' },
-          color: 'white'
+          color: 'white',
+          size: 120
         });
-        manager.on('move', (evt, data) => {
+        this._museumJoystick.on('move', (evt, data) => {
           const angle = data.angle.radian;
-          this.moveState.forward = Math.sin(angle) > 0.5;
-          this.moveState.backward = Math.sin(angle) < -0.5;
-          this.moveState.right = Math.cos(angle) > 0.5;
-          this.moveState.left = Math.cos(angle) < -0.5;
+          this.moveState.forward = Math.sin(angle) > 0.3;
+          this.moveState.backward = Math.sin(angle) < -0.3;
+          this.moveState.right = Math.cos(angle) > 0.3;
+          this.moveState.left = Math.cos(angle) < -0.3;
         });
-        manager.on('end', () => {
+        this._museumJoystick.on('end', () => {
           this.moveState.forward = false;
           this.moveState.backward = false;
           this.moveState.left = false;
@@ -2298,6 +2303,14 @@
           if (vid) { vid.pause(); vid.src = ''; }
         });
       }
+
+      // Destroy museum joystick
+      if (this._museumJoystick) {
+        this._museumJoystick.destroy();
+        this._museumJoystick = null;
+      }
+      const museumMC = document.getElementById('museum-mobile-controls');
+      if (museumMC) museumMC.style.display = 'none';
 
       document.getElementById('museum-modal').classList.add('hidden');
 
