@@ -137,7 +137,7 @@
       this.scene.background = new THREE.Color(CONFIG.world.bgColor);
       this.scene.fog = new THREE.FogExp2(CONFIG.world.fogColor, CONFIG.world.fogDensity);
 
-      this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 500);
+      this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, this.isTouchDevice ? 200 : 500);
       this.camera.position.set(0, 15, 30);
       this.euler.set(-0.1, 0, 0);
 
@@ -464,7 +464,8 @@
 
       // God Rays — alternating gold & rose shimmer for a jewel-box feel
       const rayColors = [0xFFD98A, 0xFFA0C4, 0xB8E4FF];
-      for (let i = 0; i < 12; i++) {
+      const rayCount = this.isTouchDevice ? 4 : 12;
+      for (let i = 0; i < rayCount; i++) {
         const rayMat = new THREE.MeshBasicMaterial({ color: rayColors[i % rayColors.length], transparent: true, opacity: 0.06, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
         const ray = new THREE.Mesh(new THREE.PlaneGeometry(6 + Math.random() * 6, CONFIG.world.depth + 25), rayMat);
         ray.position.set((Math.random() - 0.5) * size, CONFIG.world.depth / 2, (Math.random() - 0.5) * size);
@@ -476,7 +477,8 @@
 
       // Caustics — soft gold & rose light pools dancing on the seabed
       const causticColors = [0xFFDDA0, 0xFFB6D0, 0x8FDCFF];
-      for (let i = 0; i < 25; i++) {
+      const causticCount = this.isTouchDevice ? 8 : 25;
+      for (let i = 0; i < causticCount; i++) {
         const causticMat = new THREE.MeshBasicMaterial({ color: causticColors[i % causticColors.length], transparent: true, opacity: 0.06, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
         const c = new THREE.Mesh(new THREE.CircleGeometry(4 + Math.random() * 6, 8), causticMat);
         c.rotation.x = -Math.PI / 2;
@@ -487,7 +489,7 @@
       }
 
       // Sparkles — fine twinkling gold glitter drifting through the water
-      const sparkleCount = 260;
+      const sparkleCount = this.isTouchDevice ? 60 : 260;
       const sparkleGeo = new THREE.BufferGeometry();
       const sPos = new Float32Array(sparkleCount * 3);
       const sPhase = new Float32Array(sparkleCount);
@@ -531,12 +533,14 @@
         this.scene.add(star);
       }
 
-      // Urchins (25)
+      // Urchins
+      const urchinCount = this.isTouchDevice ? 8 : 25;
       const urchinMat = new THREE.MeshStandardMaterial({ color: 0x1A2536, roughness: 0.9 });
-      for (let i = 0; i < 25; i++) {
+      for (let i = 0; i < urchinCount; i++) {
         const u = new THREE.Group();
         u.add(new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), urchinMat));
-        for (let s = 0; s < 25; s++) {
+        const spikeCount = this.isTouchDevice ? 10 : 25;
+        for (let s = 0; s < spikeCount; s++) {
           const spike = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.65, 4), urchinMat);
           spike.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
           u.add(spike);
@@ -545,24 +549,27 @@
         this.scene.add(u);
       }
 
-      // Shells (40)
+      // Shells
+      const shellCount = this.isTouchDevice ? 12 : 40;
       const shellMat = new THREE.MeshStandardMaterial({ color: 0xF7D6A3, roughness: 0.5, metalness: 0.2 });
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < shellCount; i++) {
         const shell = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.45, 6), shellMat);
         shell.rotation.set(Math.PI / 2, Math.random() * Math.PI, 0);
         shell.position.set((Math.random() - 0.5) * CONFIG.world.size * 0.85, 0.2, (Math.random() - 0.5) * CONFIG.world.size * 0.85);
         this.scene.add(shell);
       }
 
-      // Anemones (40) with curved tentacles
+      // Anemones with curved tentacles
+      const anemCount = this.isTouchDevice ? 10 : 40;
+      const tentacleCount = this.isTouchDevice ? 6 : 16;
       const anemColors = [0xFF88CC, 0x88CCFF, 0xAAFF88, 0xFFAA88];
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < anemCount; i++) {
         const color = anemColors[i % anemColors.length];
         const amat = new THREE.MeshStandardMaterial({ color, roughness: 0.7, emissive: new THREE.Color(color).multiplyScalar(0.25) });
         const an = new THREE.Group();
         an.add(new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 0.4, 10), amat));
         an.userData.tentacles = [];
-        for (let t = 0; t < 16; t++) {
+        for (let t = 0; t < tentacleCount; t++) {
           const tentacle = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.05, 0.9, 5), amat);
           const angle = Math.random() * Math.PI * 2;
           tentacle.position.set(Math.cos(angle) * 0.22, 0.4, Math.sin(angle) * 0.22);
@@ -575,24 +582,29 @@
         this.anemones.push(an);
       }
 
-      // Jellyfish (15) with bioluminescent glow
+      // Jellyfish with bioluminescent glow
+      const jellyCount = this.isTouchDevice ? 5 : 15;
       const jellyColors = [0xFF77BB, 0x77CCFF, 0x99FF88, 0xBB88FF];
-      for (let j = 0; j < 15; j++) {
+      for (let j = 0; j < jellyCount; j++) {
         const color = jellyColors[j % jellyColors.length];
         const jmat = new THREE.MeshStandardMaterial({ color, transparent: true, opacity: 0.55, roughness: 0.2, emissive: new THREE.Color(color).multiplyScalar(0.3), side: THREE.DoubleSide });
         const jelly = new THREE.Group();
-        const bell = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.6), jmat);
+        const bell = new THREE.Mesh(new THREE.SphereGeometry(1, this.isTouchDevice ? 10 : 16, this.isTouchDevice ? 8 : 12, 0, Math.PI * 2, 0, Math.PI * 0.6), jmat);
         jelly.add(bell);
         
         // Inner rim cap
-        const rim = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.06, 6, 16), jmat);
+        const rim = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.06, 6, this.isTouchDevice ? 8 : 16), jmat);
         rim.position.y = -0.55;
         rim.rotation.x = Math.PI / 2;
         jelly.add(rim);
 
-        const light = new THREE.PointLight(color, 0.8, 12);
-        light.position.y = -0.2;
-        jelly.add(light);
+        // PointLight only on desktop (huge GPU cost on mobile)
+        let light = null;
+        if (!this.isTouchDevice) {
+          light = new THREE.PointLight(color, 0.8, 12);
+          light.position.y = -0.2;
+          jelly.add(light);
+        }
 
         jelly.position.set((Math.random() - 0.5) * CONFIG.world.size * 0.8, 10 + Math.random() * 30, (Math.random() - 0.5) * CONFIG.world.size * 0.8);
         jelly.userData = { baseY: jelly.position.y, pulseSpeed: 1.5 + Math.random(), offset: Math.random() * Math.PI * 2, bell, light };
@@ -652,10 +664,12 @@
       heartShape.bezierCurveTo(1.1, 0, 1.1, -0.75, 0.75, -0.75);
       heartShape.bezierCurveTo(0.6, -0.75, 0, -0.3, 0, 0);
 
+      const isMobile = this.isTouchDevice;
+
       const extrudeSettings = {
         depth: 0.35,
         bevelEnabled: true,
-        bevelSegments: 4,
+        bevelSegments: isMobile ? 2 : 4,
         steps: 1,
         bevelSize: 0.1,
         bevelThickness: 0.12
@@ -664,6 +678,9 @@
       const heartGeo = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
       heartGeo.center();
       heartGeo.rotateZ(Math.PI);
+
+      // Shared glass bubble geometry (lower poly on mobile)
+      const bubbleGeo = new THREE.SphereGeometry(2.2, isMobile ? 8 : 20, isMobile ? 8 : 20);
 
       for (const disc of DISCOVERIES) {
         const grp = new THREE.Group();
@@ -680,23 +697,39 @@
         const heart = new THREE.Mesh(heartGeo, heartMat);
         grp.add(heart);
 
-        // Surrounding Glass Bubble Capsule
-        const bubbleMat = new THREE.MeshStandardMaterial({
-          color: disc.color,
-          transparent: true,
-          opacity: 0.28,
-          roughness: 0.1,
-          metalness: 0.8,
-          side: THREE.DoubleSide,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false
-        });
-        const glassBubble = new THREE.Mesh(new THREE.SphereGeometry(2.2, 20, 20), bubbleMat);
+        // Surrounding Glass Bubble Capsule (simplified on mobile)
+        let glassBubble;
+        if (isMobile) {
+          // Simpler material on mobile — no additive blending (prevents overdraw lag)
+          const bubbleMat = new THREE.MeshBasicMaterial({
+            color: disc.color,
+            transparent: true,
+            opacity: 0.15,
+            side: THREE.FrontSide,
+            depthWrite: false
+          });
+          glassBubble = new THREE.Mesh(bubbleGeo, bubbleMat);
+        } else {
+          const bubbleMat = new THREE.MeshStandardMaterial({
+            color: disc.color,
+            transparent: true,
+            opacity: 0.28,
+            roughness: 0.1,
+            metalness: 0.8,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+          });
+          glassBubble = new THREE.Mesh(bubbleGeo, bubbleMat);
+        }
         grp.add(glassBubble);
 
-        // Soft Localized Glow (No floor washout)
-        const light = new THREE.PointLight(disc.color, 1.5, 12);
-        grp.add(light);
+        // PointLight only on desktop (GPU killer on mobile)
+        let light = null;
+        if (!isMobile) {
+          light = new THREE.PointLight(disc.color, 1.5, 12);
+          grp.add(light);
+        }
 
         grp.userData = { id: disc.id, glassBubble, heart, light, basePos: disc.position.clone() };
         if (disc.found) grp.visible = false;
