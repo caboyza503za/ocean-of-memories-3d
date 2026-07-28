@@ -2105,7 +2105,14 @@
         });
         this._museumJoystick.on('move', (evt, data) => {
           this.museumJoystickActive = true;
-          this.museumJoystickDelta = data.vector; // {x, y}
+          if (data && data.angle && data.angle.radian !== undefined) {
+            const force = Math.min(data.force || 1, 2);
+            const angle = data.angle.radian;
+            this.museumJoystickDelta = { 
+              x: Math.cos(angle) * (force / 2), 
+              y: Math.sin(angle) * (force / 2) 
+            };
+          }
         });
         this._museumJoystick.on('end', () => {
           this.museumJoystickActive = false;
