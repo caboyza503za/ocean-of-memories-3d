@@ -40,6 +40,22 @@
   let DISCOVERIES = [];
   let ASSETS = [];
 
+  function setupContextLossRecovery(canvas, label) {
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      console.warn(`WebGL context lost: ${label}`);
+      let overlay = document.getElementById('webgl-lost-overlay');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'webgl-lost-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;background:rgba(6,8,20,0.92);color:#fff;font-family:Kanit,sans-serif;text-align:center;padding:20px;';
+        overlay.innerHTML = `<div style="font-size:2.5rem;">💫</div><div style="font-size:1.1rem;max-width:320px;">หน้าจอค้างชั่วคราว (หน่วยความจำกราฟิกเต็ม) — แตะเพื่อโหลดใหม่</div><button style="padding:10px 24px;border-radius:24px;background:#ff6b9e;color:#fff;border:none;font-size:1rem;" onclick="location.reload()">โหลดใหม่</button>`;
+        document.body.appendChild(overlay);
+      }
+      overlay.style.display = 'flex';
+    }, false);
+  }
+
   class UnderwaterWorld {
     constructor() {
       this.scene = null;
@@ -145,6 +161,7 @@
       this.renderer = new THREE.WebGLRenderer({ antialias: !this.isTouchDevice, alpha: true });
       this.renderer.setSize(window.innerWidth, window.innerHeight);
       this.renderer.setPixelRatio(this.isTouchDevice ? 1.0 : window.devicePixelRatio);
+      setupContextLossRecovery(this.renderer.domElement, 'Ocean');
       document.getElementById('canvas-container').appendChild(this.renderer.domElement);
 
       this.updateLoadingProgress(30, 'กำลังสร้างมหาสมุทรโรแมนติก...');
@@ -1584,6 +1601,7 @@
       // Disable shadows on mobile for performance
       this.renderer.shadowMap.enabled = !(this.app && this.app.isTouchDevice);
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      setupContextLossRecovery(this.renderer.domElement, 'Museum');
       this.container.appendChild(this.renderer.domElement);
 
       this.buildMuseumRoom();
@@ -1935,7 +1953,19 @@
     buildExhibits() {
       // Clear old exhibit meshes if any
       if (this.exhibits) {
-        this.exhibits.forEach(e => this.scene.remove(e));
+        this.exhibits.forEach(e => {
+          this.scene.remove(e);
+          e.traverse((obj) => {
+            if (obj.geometry) obj.geometry.dispose();
+            if (obj.material) {
+              const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+              mats.forEach((m) => {
+                if (m.map) m.map.dispose();
+                m.dispose();
+              });
+            }
+          });
+        });
       }
       this.exhibits = [];
       const pedestalMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.6 });
@@ -2143,6 +2173,7 @@
       this.inspectRenderer = new THREE.WebGLRenderer({ antialias: !(this.app && this.app.isTouchDevice), alpha: true });
       this.inspectRenderer.setSize(inspectContainer.clientWidth, inspectContainer.clientHeight || 400);
       this.inspectRenderer.setPixelRatio((this.app && this.app.isTouchDevice) ? 1.0 : window.devicePixelRatio);
+      setupContextLossRecovery(this.inspectRenderer.domElement, 'Inspect');
       inspectContainer.appendChild(this.inspectRenderer.domElement);
 
       this.inspectScene.add(new THREE.AmbientLight(0xffffff, 1.2));
@@ -2258,6 +2289,16 @@
 
       if (this.inspectFrameMesh) {
         this.inspectScene.remove(this.inspectFrameMesh);
+        this.inspectFrameMesh.traverse((obj) => {
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) {
+            const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+            mats.forEach((m) => {
+              if (m.map) m.map.dispose();
+              m.dispose();
+            });
+          }
+        });
       }
 
       const frameColor = isFound ? 0xffd700 : 0x475569;
