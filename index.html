@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Ocean of Memories - 7th Month Anniversary</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- WebGL Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <div class="loading-content">
+      <div class="heart-pulse">❤️</div>
+      <h1 class="loading-title">Ocean of Memories</h1>
+      <p class="loading-subtitle">กำลังเตรียมความทรงจำของเรา...</p>
+      <div class="loading-bar-container">
+        <div id="loading-bar" class="loading-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Passcode Lock Screen -->
+  <div id="passcode-screen" class="hidden">
+    <div class="passcode-box glass-large">
+      <div class="lock-icon">🔒</div>
+      <h2 class="passcode-title">รหัสผ่านความทรงจำของเรา</h2>
+      <p class="passcode-hint">💡 คำใบ้: วันที่เริ่มคบกัน (เช่น 010169)</p>
+
+      <div class="pin-display">
+        <input type="password" id="passcode-input" maxlength="8" placeholder="กรอกรหัสผ่าน..." readonly />
+      </div>
+
+      <div class="keypad-grid">
+        <button class="key-btn" data-key="1">1</button>
+        <button class="key-btn" data-key="2">2</button>
+        <button class="key-btn" data-key="3">3</button>
+        <button class="key-btn" data-key="4">4</button>
+        <button class="key-btn" data-key="5">5</button>
+        <button class="key-btn" data-key="6">6</button>
+        <button class="key-btn" data-key="7">7</button>
+        <button class="key-btn" data-key="8">8</button>
+        <button class="key-btn" data-key="9">9</button>
+        <button class="key-btn action-btn" id="key-del">⌫</button>
+        <button class="key-btn" data-key="0">0</button>
+        <button class="key-btn action-btn" id="key-enter">💖</button>
+      </div>
+
+      <div id="passcode-error" class="passcode-error hidden">❌ รหัสผ่านไม่ถูกต้อง ลองอีกทีนะคนเก่ง! ❤️</div>
+    </div>
+  </div>
+
+  <!-- Landing Page -->
+  <div id="landing-page" class="hidden">
+    <div class="landing-content glass">
+      <h1 class="landing-title-main">จั๊ม ❤️ ม่อน</h1>
+      <h2 class="landing-subtitle-main">Happy 7th Month Anniversary</h2>
+      <p class="landing-desc">
+        ความทรงจำตลอด 7 เดือนที่ผ่านมาถูกซ่อนอยู่ในมหาสมุทรแห่งนี้<br>
+        ค้นหาฟองความทรงจำทั้ง 33 จุด ผ่านมินิเกมเพื่อปลดล็อคเรื่องราวของเรา
+      </p>
+      <div class="landing-timer" id="anniversary-timer">คบกันมาแล้ว: 7 เดือน 0 วัน</div>
+      
+      <div id="envelope-btn" class="wax-envelope-btn">
+        <div class="wax-seal">❤️ 7M</div>
+        <span>💌 เปิดอ่านจดหมายรักพิเศษ</span>
+      </div>
+
+      <button id="start-btn" class="btn-primary">
+        ดำดิ่งสู่ความทรงจำ
+      </button>
+    </div>
+  </div>
+
+  <!-- Love Letter Modal -->
+  <div id="love-letter-modal" class="modal hidden">
+    <div class="letter-card glass-large">
+      <button id="letter-close-btn" class="close-btn">&times;</button>
+      <div class="letter-header">
+        <span class="letter-stamp">💌 7th Month Anniversary</span>
+        <h2>ถึง น้องม่อน... ❤️</h2>
+      </div>
+      <div class="letter-body">
+        <p>ขอบคุณสำหรับ 7 เดือนที่ผ่านมาที่คอยอยู่ข้างๆ กัน คอยส่งยิ้มและสร้างความสุขให้พี่ในทุกๆ วันนะ</p>
+        <p>ถึงเราจะผ่านเรื่องราวต่างๆ มา แต่ทุกช่วงเวลาที่มีหนูมันมีค่าสำหรับพี่เสมอ</p>
+        <p>อยู่เป็นความสดใสและจับมือคบกันไปนานๆ นะครับคนเก่ง ❤️</p>
+      </div>
+      <div class="letter-footer">
+        <p class="letter-signature">จาก พี่จั๊ม ❤️</p>
+        <button id="letter-start-btn" class="btn-primary" style="margin-top: 15px;">🌊 ดำน้ำสำรวจความทรงจำใต้น้ำ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-top-left">
+      <button id="gallery-btn" class="btn-glass">
+        📖 แกลเลอรีความทรงจำ (<span id="hud-collected">0</span>/33)
+      </button>
+    </div>
+    
+    <div class="hud-top-center">
+      <div id="heart-radar" class="radar-badge">
+        <span id="compass-arrow" class="compass-arrow">⬆️</span>
+        <span id="radar-text">หัวใจถัดไป: 25 ม.</span>
+      </div>
+    </div>
+
+    <div class="hud-top-right">
+      <button id="bgm-toggle-btn" class="btn-glass">🎵 เสียงดนตรี</button>
+      <button id="minimap-toggle-btn" class="btn-glass">🗺️ แผนที่</button>
+    </div>
+    
+    <!-- Mobile Controls (Left Joystick, Right Speed) -->
+    <div id="mobile-controls" class="mobile-controls">
+      <div id="joystick-zone" class="joystick-zone"></div>
+      <div class="speed-controls">
+        <button id="btn-speed-up" class="btn-glass">⬆️</button>
+        <button id="btn-speed-down" class="btn-glass">⬇️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Minimap Modal -->
+  <div id="minimap-modal" class="modal hidden">
+    <div class="modal-content glass">
+      <button id="minimap-close-btn" class="close-btn">&times;</button>
+      <h2>🗺️ แผนที่ความทรงจำใต้ทะเล</h2>
+      <canvas id="minimap-canvas" width="280" height="280"></canvas>
+      <p class="instruction-text" style="margin-top:10px;">🔴 จุดของคุณ | 💖 หัวใจความทรงจำ | 💛 ปลดล็อคแล้ว</p>
+    </div>
+  </div>
+
+  <!-- Polaroid Overlay for Screenshot / Photo Mode -->
+  <div id="polaroid-overlay" class="polaroid-overlay hidden">
+    <div class="polaroid-caption">จั๊ม ❤️ ม่อน - 7th Month Anniversary</div>
+  </div>
+
+  <!-- Minigame Modal -->
+  <div id="minigame-modal" class="modal hidden">
+    <div class="modal-content glass">
+      <div class="modal-header">
+        <h2 id="minigame-title">ด่านที่ X</h2>
+      </div>
+      <div class="modal-body" id="minigame-container">
+        <!-- Minigame injected here -->
+      </div>
+      <p id="minigame-instruction" class="instruction-text"></p>
+    </div>
+  </div>
+
+  <!-- Memory Reveal Modal -->
+  <div id="memory-modal" class="modal hidden">
+    <div class="modal-content memory-glass">
+      <h2 class="memory-title">ความทรงจำที่ <span id="memory-index"></span></h2>
+      <div class="memory-media-container" id="memory-media">
+        <!-- Image or Video injected here -->
+      </div>
+      <p class="memory-caption" id="memory-caption">ความทรงจำพิเศษของเราสองคน</p>
+      <button id="memory-close-btn" class="btn-primary">เก็บความทรงจำ</button>
+    </div>
+  </div>
+
+  <!-- 3D Virtual Museum Container & UI -->
+  <div id="museum-modal" class="modal hidden">
+    <div id="museum-canvas-container"></div>
+
+    <!-- Museum HUD -->
+    <div class="museum-hud-top">
+      <div class="museum-badge">🏛️ 3D Virtual Museum</div>
+      <div class="museum-progress">สำรวจแล้ว: <span id="museum-explored-count">0</span>/33 ชิ้น</div>
+      <button id="museum-exit-btn" class="btn-glass">🚪 ออกจากพิพิธภัณฑ์</button>
+    </div>
+
+    <!-- Control Instructions Guide Modal -->
+    <div id="museum-guide" class="museum-guide-box glass-large">
+      <h2>🏛️ ยินดีต้อนรับสู่พิพิธภัณฑ์ความทรงจำ 3D</h2>
+      <p class="guide-subtitle">เดินชมผลงานภาพถ่ายและวิดีโอความทรงจำทั้ง 33 ชิ้น ในบรรยากาศพิพิธภัณฑ์หรูหรา 3D</p>
+      
+      <div class="guide-controls-list">
+        <div class="guide-item">
+          <span class="guide-key">💻 คอมพิวเตอร์</span>
+          <span>เดิน: <strong>WASD / ปุ่มลูกศร</strong> | หันมอง: <strong>เมาส์</strong></span>
+        </div>
+        <div class="guide-item">
+          <span class="guide-key">📱 ไอแพด/มือถือ</span>
+          <span>เดิน: <strong>Touch Joystick</strong> | หันมอง: <strong>ลากนิ้วบนจอ</strong></span>
+        </div>
+        <div class="guide-item">
+          <span class="guide-key">🔍 ส่องดูวัตถุ 3D</span>
+          <span>เดินเข้าใกล้กรอบรูป แล้วกด <strong>Inspect</strong> เพื่อหมุนดูหน้า-หลัง 360°</span>
+        </div>
+      </div>
+
+      <button id="museum-start-guide-btn" class="btn-primary" style="margin-top:20px;">เริ่มต้นเดินชมพิพิธภัณฑ์ 🏛️</button>
+    </div>
+
+    <!-- Floating Inspect Prompt -->
+    <div id="museum-inspect-prompt" class="inspect-prompt-badge hidden">
+      <span>🔍 เข้าใกล้ชิ้นงาน 3D</span>
+      <button id="btn-do-inspect" class="btn-primary btn-sm">Inspect 🔍</button>
+    </div>
+
+    <!-- 3D Object 360 Inspector View -->
+    <div id="inspect-modal" class="inspect-view-overlay hidden">
+      <div class="inspect-header" style="pointer-events: auto;">
+        <span class="inspect-title" id="inspect-item-title">รูปภาพความทรงจำที่ 1</span>
+        <button id="inspect-close-btn" class="close-btn" onclick="document.getElementById('inspect-modal').classList.add('hidden'); event.stopPropagation();" style="pointer-events: auto !important; z-index: 999999 !important;">&times;</button>
+      </div>
+
+      <div id="inspect-3d-canvas-container"></div>
+      
+      <div class="inspect-footer">
+        <p class="inspect-hint">🔄 ลากนิ้วหรือเมาส์เพื่อหมุนกรอบรูปดูข้อความสลักด้านหลัง 360°</p>
+        <div class="inspect-back-note-card glass" id="inspect-back-note">
+          <span class="note-label">📝 ข้อความสลักหลังกรอบรูป:</span>
+          <p id="inspect-note-text">ข้อความบอกรัก...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gallery Modal -->
+  <div id="gallery-modal" class="modal hidden">
+    <div class="modal-content glass-large">
+      <button id="gallery-close-btn" class="close-btn">&times;</button>
+      <h2>📖 แกลเลอรีความทรงจำ</h2>
+      <div class="gallery-grid" id="gallery-grid">
+        <!-- 33 items injected here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Final Celebration -->
+  <div id="celebration-modal" class="modal hidden">
+    <div class="modal-content glass celebration-box">
+      <h1>🎉 Happy Anniversary! 🎉</h1>
+      <p class="love-letter">
+        ขอบคุณสำหรับทุกๆ ความทรงจำดีๆ ตลอด 7 เดือนที่ผ่านมานะหนู<br>
+        พี่รักหนูนะ ❤️
+      </p>
+      <button id="celebration-close-btn" class="btn-primary">ดูแกลเลอรีทั้งหมด</button>
+    </div>
+  </div>
+
+  <!-- Standalone Cross-Browser Scripts -->
+  <script src="three.min.js"></script>
+  <script src="minigames.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
