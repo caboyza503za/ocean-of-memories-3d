@@ -159,7 +159,7 @@
 
       // Update HUD with saved progress
       const hudCollected = document.getElementById('hud-collected');
-      if (hudCollected) hudCollected.textContent = `${this.discoveredCount}/${DISCOVERIES.length}`;
+      if (hudCollected) hudCollected.textContent = this.discoveredCount;
 
       this.startDate = new Date(2026, 0, 1, 1, 8, 0); // 1 Jan 2026, 01:08:00
       this.updateTimer();
