@@ -68,6 +68,15 @@
       this.isStarted = false;
 
       this.isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      // Override for performance on mobile
+      if (this.isTouchDevice) {
+        CONFIG.bubbles.count = 50;
+        CONFIG.dust.count = 100;
+        CONFIG.fish.schoolCount = 2;
+        CONFIG.fish.fishPerSchool = 8;
+      }
+
       this.joystickActive = false;
       this.joystickBase = { x: 0, y: 0 };
       this.joystickDelta = { x: 0, y: 0 };
@@ -132,9 +141,9 @@
       this.camera.position.set(0, 15, 30);
       this.euler.set(-0.1, 0, 0);
 
-      this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      this.renderer = new THREE.WebGLRenderer({ antialias: !this.isTouchDevice, alpha: true });
       this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.renderer.setPixelRatio(this.isTouchDevice ? Math.min(window.devicePixelRatio, 1.25) : window.devicePixelRatio);
+      this.renderer.setPixelRatio(this.isTouchDevice ? 1.0 : window.devicePixelRatio);
       document.getElementById('canvas-container').appendChild(this.renderer.domElement);
 
       this.updateLoadingProgress(30, 'กำลังสร้างมหาสมุทรโรแมนติก...');
@@ -1532,8 +1541,9 @@
 
       this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
       this.renderer.setSize(width, height);
-      this.renderer.setPixelRatio((this.app && this.app.isTouchDevice) ? Math.min(window.devicePixelRatio, 1.25) : Math.min(window.devicePixelRatio, 2));
-      this.renderer.shadowMap.enabled = true;
+      this.renderer.setPixelRatio((this.app && this.app.isTouchDevice) ? 1.0 : Math.min(window.devicePixelRatio, 2));
+      // Disable shadows on mobile for performance
+      this.renderer.shadowMap.enabled = !(this.app && this.app.isTouchDevice);
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       this.container.appendChild(this.renderer.domElement);
 
@@ -2085,9 +2095,9 @@
       this.inspectCamera = new THREE.PerspectiveCamera(45, inspectContainer.clientWidth / (inspectContainer.clientHeight || 400), 0.1, 50);
       this.inspectCamera.position.set(0, 0, 5);
 
-      this.inspectRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      this.inspectRenderer = new THREE.WebGLRenderer({ antialias: !(this.app && this.app.isTouchDevice), alpha: true });
       this.inspectRenderer.setSize(inspectContainer.clientWidth, inspectContainer.clientHeight || 400);
-      this.inspectRenderer.setPixelRatio((this.app && this.app.isTouchDevice) ? Math.min(window.devicePixelRatio, 1.25) : window.devicePixelRatio);
+      this.inspectRenderer.setPixelRatio((this.app && this.app.isTouchDevice) ? 1.0 : window.devicePixelRatio);
       inspectContainer.appendChild(this.inspectRenderer.domElement);
 
       this.inspectScene.add(new THREE.AmbientLight(0xffffff, 1.2));
