@@ -298,14 +298,15 @@
     // Environment & High-Aesthetic Features
     // ============================================
     createEnvironment() {
-      // Lighting
-      this.scene.add(new THREE.AmbientLight(CONFIG.world.ambientColor, 1.4));
-      const sun = new THREE.DirectionalLight(CONFIG.world.surfaceLightColor, 1.6);
+      // Lighting — boost on mobile to compensate for removed PointLights
+      const isMobile = this.isTouchDevice;
+      this.scene.add(new THREE.AmbientLight(CONFIG.world.ambientColor, isMobile ? 2.5 : 1.4));
+      const sun = new THREE.DirectionalLight(CONFIG.world.surfaceLightColor, isMobile ? 2.8 : 1.6);
       sun.position.set(30, 100, 20);
       this.scene.add(sun);
-      this.scene.add(new THREE.HemisphereLight(0xFFC9A0, 0x102035, 0.8));
+      this.scene.add(new THREE.HemisphereLight(0xFFC9A0, 0x102035, isMobile ? 1.5 : 0.8));
       // Soft gold fill light — adds a warm, jewel-box sheen to nearby corals & fish
-      const goldFill = new THREE.PointLight(0xFFD98A, 0.5, 90);
+      const goldFill = new THREE.PointLight(0xFFD98A, isMobile ? 1.2 : 0.5, isMobile ? 150 : 90);
       goldFill.position.set(0, 25, 0);
       this.scene.add(goldFill);
 
@@ -691,7 +692,7 @@
           color: disc.color,
           roughness: 0.15,
           metalness: 0.4,
-          emissive: new THREE.Color(disc.color).multiplyScalar(0.5),
+          emissive: new THREE.Color(disc.color).multiplyScalar(isMobile ? 0.9 : 0.5),
           side: THREE.DoubleSide
         });
         const heart = new THREE.Mesh(heartGeo, heartMat);
@@ -2103,13 +2104,12 @@
           fadeTime: 200
         });
         this._museumJoystick.on('move', (evt, data) => {
-          const angle = data.angle.radian;
-          this.moveState.forward = Math.sin(angle) > 0.3;
-          this.moveState.backward = Math.sin(angle) < -0.3;
-          this.moveState.right = Math.cos(angle) > 0.3;
-          this.moveState.left = Math.cos(angle) < -0.3;
+          this.museumJoystickActive = true;
+          this.museumJoystickDelta = data.vector; // {x, y}
         });
         this._museumJoystick.on('end', () => {
+          this.museumJoystickActive = false;
+          this.museumJoystickDelta = { x: 0, y: 0 };
           this.moveState.forward = false;
           this.moveState.backward = false;
           this.moveState.left = false;
@@ -2390,9 +2390,10 @@
       if (this.moveState.left) dir.x -= 1;
       if (this.moveState.right) dir.x += 1;
 
-      if (this.app && this.app.joystickActive && this.app.joystickDelta) {
-        dir.z += (this.app.joystickDelta.y * 0.02);
-        dir.x += (this.app.joystickDelta.x * 0.02);
+      if (this.museumJoystickActive && this.museumJoystickDelta) {
+        // Nipplejs vector.y is positive when UP. UP means move forward (negative Z).
+        dir.z -= this.museumJoystickDelta.y;
+        dir.x += this.museumJoystickDelta.x;
       }
 
       dir.normalize();
