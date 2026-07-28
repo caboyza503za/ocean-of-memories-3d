@@ -812,58 +812,34 @@
 
     setupJoystick() {
       const zone = document.getElementById('joystick-zone');
-      if (!zone) return;
+      if (!zone || !window.nipplejs) return;
 
+      // Remove old custom visual if exists
       const old = document.getElementById('js-vis');
       if (old) old.remove();
 
-      this.joystickVisual = document.createElement('div');
-      this.joystickVisual.id = 'js-vis';
-      this.joystickVisual.style.cssText = 'position:absolute; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.15); border:2px solid rgba(255,255,255,0.4); display:none; left:15px; bottom:15px; pointer-events:none; z-index:99;';
-      this.joystickKnob = document.createElement('div');
-      this.joystickKnob.style.cssText = 'position:absolute; width:50px; height:50px; border-radius:50%; background:#ff69b4; top:35px; left:35px; box-shadow:0 0 10px #ff69b4;';
-      this.joystickVisual.appendChild(this.joystickKnob);
-      (document.getElementById('mobile-controls') || document.body).appendChild(this.joystickVisual);
+      // Dynamic nipplejs: appears where you touch on the left half
+      this._oceanJoystick = nipplejs.create({
+        zone: zone,
+        mode: 'dynamic',
+        color: '#ff69b4',
+        size: 120,
+        fadeTime: 200
+      });
 
-      const start = (e) => {
+      this._oceanJoystick.on('move', (evt, data) => {
         if (this.showingDiscovery) return;
-        if (e.cancelable) e.preventDefault();
-        const t = e.touches ? e.touches[0] : e;
-        this.joystickActive = true;
-        this.joystickBase = { x: t.clientX, y: t.clientY };
-        this.joystickVisual.style.display = 'block';
-      };
-
-      const move = (e) => {
-        if (!this.joystickActive) return;
-        if (e.cancelable) e.preventDefault();
-        const t = e.touches ? e.touches[0] : e;
-        const dx = t.clientX - this.joystickBase.x;
-        const dy = t.clientY - this.joystickBase.y;
-        const dist = Math.min(Math.sqrt(dx * dx + dy * dy), 40);
-        const angle = Math.atan2(dy, dx);
-        this.joystickDelta.x = Math.cos(angle) * dist;
-        this.joystickDelta.y = Math.sin(angle) * dist;
-        this.joystickKnob.style.transform = `translate(${this.joystickDelta.x}px, ${this.joystickDelta.y}px)`;
-
-        this.euler.y -= (this.joystickDelta.x * 0.0008);
-        this.euler.x -= (this.joystickDelta.y * 0.0008);
+        const force = Math.min(data.force, 2);
+        const angle = data.angle.radian;
+        // Use joystick to steer camera direction
+        this.euler.y -= Math.cos(angle) * force * 0.003;
+        this.euler.x += Math.sin(angle) * force * 0.003;
         this.euler.x = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, this.euler.x));
-      };
+      });
 
-      const end = () => {
-        this.joystickActive = false;
-        this.joystickDelta = { x: 0, y: 0 };
-        this.joystickVisual.style.display = 'none';
-        this.joystickKnob.style.transform = 'translate(0,0)';
-      };
-
-      zone.addEventListener('touchstart', start, { passive: false });
-      zone.addEventListener('touchmove', move, { passive: false });
-      zone.addEventListener('touchend', end);
-      zone.addEventListener('mousedown', start);
-      document.addEventListener('mousemove', (e) => { if (this.joystickActive) move(e); });
-      document.addEventListener('mouseup', end);
+      this._oceanJoystick.on('end', () => {
+        // Nothing to reset - steering stops naturally
+      });
 
       // Speed buttons are handled in setupControls() - no duplication here
     }
@@ -2078,10 +2054,10 @@
 
         this._museumJoystick = nipplejs.create({
           zone: document.getElementById('museum-joystick-zone'),
-          mode: 'static',
-          position: { left: '75px', bottom: '75px' },
+          mode: 'dynamic',
           color: 'white',
-          size: 120
+          size: 120,
+          fadeTime: 200
         });
         this._museumJoystick.on('move', (evt, data) => {
           const angle = data.angle.radian;
