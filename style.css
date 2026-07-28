@@ -1094,4 +1094,4 @@ body {
 }
 
 
-@media (max-width: 768px) { .mobile-controls { display: flex !important; } }
+@media (pointer: coarse), (max-width: 1024px) and (hover: none) { .mobile-controls { display: flex !important; } }

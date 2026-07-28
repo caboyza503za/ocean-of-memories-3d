@@ -128,7 +128,7 @@
       this.scene.background = new THREE.Color(CONFIG.world.bgColor);
       this.scene.fog = new THREE.FogExp2(CONFIG.world.fogColor, CONFIG.world.fogDensity);
 
-      this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 250);
+      this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 500);
       this.camera.position.set(0, 15, 30);
       this.euler.set(-0.1, 0, 0);
 
@@ -156,6 +156,10 @@
       this.updateLoadingProgress(100, 'พร้อมแล้ว!');
       await this.delay(400);
       document.getElementById('loading-screen').classList.add('hidden');
+
+      // Update HUD with saved progress
+      const hudCollected = document.getElementById('hud-collected');
+      if (hudCollected) hudCollected.textContent = `${this.discoveredCount}/${DISCOVERIES.length}`;
 
       this.startDate = new Date(2026, 0, 1, 1, 8, 0); // 1 Jan 2026, 01:08:00
       this.updateTimer();
@@ -697,6 +701,7 @@
     // ============================================
     setupControls() {
       const canvas = this.renderer.domElement;
+      this._moveKeys = { forward: false, backward: false, left: false, right: false };
 
       if (this.isTouchDevice) {
         const mc = document.getElementById('mobile-controls');
@@ -710,6 +715,27 @@
           if (g && g.classList.contains('hidden')) {
             try { canvas.requestPointerLock(); } catch (e) { }
           }
+        }
+      });
+
+      // WASD / Arrow Key Controls
+      document.addEventListener('keydown', (e) => {
+        if (!this.isStarted) return;
+        switch (e.code) {
+          case 'KeyW': case 'ArrowUp': this._moveKeys.forward = true; break;
+          case 'KeyS': case 'ArrowDown': this._moveKeys.backward = true; break;
+          case 'KeyA': case 'ArrowLeft': this._moveKeys.left = true; break;
+          case 'KeyD': case 'ArrowRight': this._moveKeys.right = true; break;
+        }
+        if (e.key.toLowerCase() === 'p') this.takeScreenshot();
+        if (e.key.toLowerCase() === 'f') this.togglePhotoMode();
+      });
+      document.addEventListener('keyup', (e) => {
+        switch (e.code) {
+          case 'KeyW': case 'ArrowUp': this._moveKeys.forward = false; break;
+          case 'KeyS': case 'ArrowDown': this._moveKeys.backward = false; break;
+          case 'KeyA': case 'ArrowLeft': this._moveKeys.left = false; break;
+          case 'KeyD': case 'ArrowRight': this._moveKeys.right = false; break;
         }
       });
 
@@ -772,21 +798,15 @@
         this.targetSpeed = Math.max(CONFIG.player.minSpeed, Math.min(CONFIG.player.maxSpeed, this.targetSpeed));
       }, { passive: false });
 
-      document.addEventListener('keydown', (e) => {
-        if (!this.isStarted) return;
-        if (e.key.toLowerCase() === 'p') this.takeScreenshot();
-        if (e.key.toLowerCase() === 'f') this.togglePhotoMode();
-      });
-
       const btnUp = document.getElementById('btn-speed-up');
       if (btnUp) {
-        btnUp.addEventListener('touchstart', (e) => { e.preventDefault(); this.targetSpeed = Math.min(CONFIG.player.maxSpeed, this.targetSpeed + 0.15); });
-        btnUp.addEventListener('mousedown', (e) => { e.preventDefault(); this.targetSpeed = Math.min(CONFIG.player.maxSpeed, this.targetSpeed + 0.15); });
+        btnUp.addEventListener('touchstart', (e) => { e.preventDefault(); this.targetSpeed = Math.min(CONFIG.player.maxSpeed, this.targetSpeed + 0.5); });
+        btnUp.addEventListener('mousedown', (e) => { e.preventDefault(); this.targetSpeed = Math.min(CONFIG.player.maxSpeed, this.targetSpeed + 0.5); });
       }
       const btnDown = document.getElementById('btn-speed-down');
       if (btnDown) {
-        btnDown.addEventListener('touchstart', (e) => { e.preventDefault(); this.targetSpeed = Math.max(CONFIG.player.minSpeed, this.targetSpeed - 0.15); });
-        btnDown.addEventListener('mousedown', (e) => { e.preventDefault(); this.targetSpeed = Math.max(CONFIG.player.minSpeed, this.targetSpeed - 0.15); });
+        btnDown.addEventListener('touchstart', (e) => { e.preventDefault(); this.targetSpeed = Math.max(CONFIG.player.minSpeed, this.targetSpeed - 0.5); });
+        btnDown.addEventListener('mousedown', (e) => { e.preventDefault(); this.targetSpeed = Math.max(CONFIG.player.minSpeed, this.targetSpeed - 0.5); });
       }
     }
 
@@ -845,12 +865,7 @@
       document.addEventListener('mousemove', (e) => { if (this.joystickActive) move(e); });
       document.addEventListener('mouseup', end);
 
-      const btnUp = document.getElementById('btn-speed-up');
-      const btnDown = document.getElementById('btn-speed-down');
-      const up = (e) => { if (e.cancelable) e.preventDefault(); this.targetSpeed = Math.min(CONFIG.player.maxSpeed, this.targetSpeed + 3); };
-      const down = (e) => { if (e.cancelable) e.preventDefault(); this.targetSpeed = Math.max(CONFIG.player.minSpeed, this.targetSpeed - 3); };
-      if (btnUp) { btnUp.addEventListener('touchstart', up, { passive: false }); btnUp.addEventListener('click', up); }
-      if (btnDown) { btnDown.addEventListener('touchstart', down, { passive: false }); btnDown.addEventListener('click', down); }
+      // Speed buttons are handled in setupControls() - no duplication here
     }
 
     setupUI() {
@@ -865,8 +880,12 @@
       });
 
       document.getElementById('memory-close-btn').addEventListener('click', () => {
+        // Properly stop all videos/audio before removing
+        const mediaContainer = document.getElementById('memory-media');
+        const videos = mediaContainer.querySelectorAll('video');
+        videos.forEach(v => { v.pause(); v.src = ''; v.load(); });
+        mediaContainer.innerHTML = '';
         document.getElementById('memory-modal').classList.add('hidden');
-        document.getElementById('memory-media').innerHTML = ''; // Stop video & audio
         this.showingDiscovery = false;
         this.targetSpeed = CONFIG.player.defaultSpeed;
         if (this.discoveredCount >= DISCOVERIES.length) {
@@ -1295,6 +1314,12 @@
     // ============================================
     animate() {
       requestAnimationFrame(() => this.animate());
+
+      // Skip heavy ocean rendering when museum is open
+      if (this.virtualMuseum && this.virtualMuseum.active) {
+        return;
+      }
+
       const delta = Math.min(this.clock.getDelta(), 0.05);
       const time = this.clock.elapsedTime;
 
@@ -1302,12 +1327,29 @@
         this.moveSpeed += (this.targetSpeed - this.moveSpeed) * CONFIG.player.smoothing;
         this.camera.quaternion.setFromEuler(this.euler);
         this.direction.set(0, 0, -1).applyQuaternion(this.camera.quaternion);
+
+        // Forward/backward auto-movement + WASD strafe
         this.camera.position.addScaledVector(this.direction, this.moveSpeed * delta);
+
+        if (this._moveKeys) {
+          const right = new THREE.Vector3().crossVectors(this.direction, new THREE.Vector3(0, 1, 0)).normalize();
+          const strafeSpeed = 8 * delta;
+          if (this._moveKeys.forward) this.camera.position.addScaledVector(this.direction, strafeSpeed);
+          if (this._moveKeys.backward) this.camera.position.addScaledVector(this.direction, -strafeSpeed);
+          if (this._moveKeys.left) this.camera.position.addScaledVector(right, -strafeSpeed);
+          if (this._moveKeys.right) this.camera.position.addScaledVector(right, strafeSpeed);
+        }
+
         const hs = CONFIG.world.size * 0.85;
         this.camera.position.x = Math.max(-hs, Math.min(hs, this.camera.position.x));
         this.camera.position.y = Math.max(2, Math.min(CONFIG.world.depth - 2, this.camera.position.y));
         this.camera.position.z = Math.max(-hs, Math.min(hs, this.camera.position.z));
-        this.checkDiscoveries();
+
+        // Throttle discovery check DOM updates to every 6 frames
+        this._frameCount = (this._frameCount || 0) + 1;
+        if (this._frameCount % 6 === 0) {
+          this.checkDiscoveries();
+        }
       }
 
       // Update creatures & environment
@@ -2248,7 +2290,25 @@
 
     closeMuseum() {
       this.active = false;
+
+      // Stop all playing videos in exhibit textures
+      if (this.exhibits) {
+        this.exhibits.forEach(ex => {
+          const vid = ex.userData && ex.userData.video;
+          if (vid) { vid.pause(); vid.src = ''; }
+        });
+      }
+
       document.getElementById('museum-modal').classList.add('hidden');
+
+      // Restore mobile controls for ocean mode
+      if (this.app && this.app.isTouchDevice) {
+        const mc = document.getElementById('mobile-controls');
+        if (mc) mc.style.display = 'flex';
+        const speedControls = document.querySelector('.speed-controls');
+        if (speedControls) speedControls.style.display = 'flex';
+      }
+
       if (this.app) {
         this.app.targetSpeed = 4; // CONFIG.player.defaultSpeed
         if (!this.app.showingDiscovery && !this.app.isTouchDevice) {
