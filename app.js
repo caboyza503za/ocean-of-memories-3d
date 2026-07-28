@@ -84,6 +84,7 @@
 
     async init() {
       this.updateLoadingProgress(10, 'กำลังเตรียมความทรงจำ...');
+      await this.delay(50); // Yield to browser paint
 
       try {
         const res = await fetch('assets.json');
@@ -147,15 +148,19 @@
       document.getElementById('canvas-container').appendChild(this.renderer.domElement);
 
       this.updateLoadingProgress(30, 'กำลังสร้างมหาสมุทรโรแมนติก...');
+      await this.delay(50);
       this.createEnvironment();
 
       this.updateLoadingProgress(60, 'กำลังสร้างสิ่งมีชีวิตและดอกไม้ทะเล...');
+      await this.delay(50);
       this.createCreatures();
 
       this.updateLoadingProgress(85, 'กำลังสร้างผลึกหัวใจความทรงจำ...');
+      await this.delay(50);
       this.createDiscoveryPoints();
 
       this.updateLoadingProgress(95, 'กำลังเตรียมระบบควบคุม...');
+      await this.delay(50);
       this.setupControls();
       this.setupUI();
       this.setupGallery();
