@@ -308,7 +308,7 @@ body {
   width: 100%;
   height: 150px;
   pointer-events: none;
-  display: flex;
+  display: none; /* Changed to none for desktop */
   justify-content: space-between;
   padding: 20px;
 }
@@ -1093,3 +1093,5 @@ body {
   line-height: 1.5;
 }
 
+
+@media (max-width: 768px) { .mobile-controls { display: flex !important; } }

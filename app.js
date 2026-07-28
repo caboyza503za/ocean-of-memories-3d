@@ -132,9 +132,9 @@
       this.camera.position.set(0, 15, 30);
       this.euler.set(-0.1, 0, 0);
 
-      this.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+      this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.renderer.setPixelRatio(this.isTouchDevice ? Math.min(window.devicePixelRatio, 1.25) : window.devicePixelRatio);
       document.getElementById('canvas-container').appendChild(this.renderer.domElement);
 
       this.updateLoadingProgress(30, 'กำลังสร้างมหาสมุทรโรแมนติก...');
@@ -777,6 +777,17 @@
         if (e.key.toLowerCase() === 'p') this.takeScreenshot();
         if (e.key.toLowerCase() === 'f') this.togglePhotoMode();
       });
+
+      const btnUp = document.getElementById('btn-speed-up');
+      if (btnUp) {
+        btnUp.addEventListener('touchstart', (e) => { e.preventDefault(); this.targetSpeed = Math.min(CONFIG.player.maxSpeed, this.targetSpeed + 0.15); });
+        btnUp.addEventListener('mousedown', (e) => { e.preventDefault(); this.targetSpeed = Math.min(CONFIG.player.maxSpeed, this.targetSpeed + 0.15); });
+      }
+      const btnDown = document.getElementById('btn-speed-down');
+      if (btnDown) {
+        btnDown.addEventListener('touchstart', (e) => { e.preventDefault(); this.targetSpeed = Math.max(CONFIG.player.minSpeed, this.targetSpeed - 0.15); });
+        btnDown.addEventListener('mousedown', (e) => { e.preventDefault(); this.targetSpeed = Math.max(CONFIG.player.minSpeed, this.targetSpeed - 0.15); });
+      }
     }
 
     setupJoystick() {
@@ -1503,7 +1514,7 @@
 
       this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
       this.renderer.setSize(width, height);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.renderer.setPixelRatio((this.app && this.app.isTouchDevice) ? Math.min(window.devicePixelRatio, 1.25) : Math.min(window.devicePixelRatio, 2));
       this.renderer.shadowMap.enabled = true;
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       this.container.appendChild(this.renderer.domElement);
@@ -2012,6 +2023,33 @@
       }, { passive: true });
 
       dom.addEventListener('touchend', () => { isTouchDragging = false; });
+
+      if (this.app && this.app.isTouchDevice && window.nipplejs) {
+        const mc = document.getElementById('mobile-controls');
+        if (mc) mc.style.display = 'flex';
+        const speedControls = document.querySelector('.speed-controls');
+        if (speedControls) speedControls.style.display = 'none';
+
+        const manager = nipplejs.create({
+          zone: document.getElementById('joystick-zone'),
+          mode: 'static',
+          position: { left: '75px', bottom: '75px' },
+          color: 'white'
+        });
+        manager.on('move', (evt, data) => {
+          const angle = data.angle.radian;
+          this.moveState.forward = Math.sin(angle) > 0.5;
+          this.moveState.backward = Math.sin(angle) < -0.5;
+          this.moveState.right = Math.cos(angle) > 0.5;
+          this.moveState.left = Math.cos(angle) < -0.5;
+        });
+        manager.on('end', () => {
+          this.moveState.forward = false;
+          this.moveState.backward = false;
+          this.moveState.left = false;
+          this.moveState.right = false;
+        });
+      }
     }
 
     setupInspector() {
@@ -2026,7 +2064,7 @@
 
       this.inspectRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       this.inspectRenderer.setSize(inspectContainer.clientWidth, inspectContainer.clientHeight || 400);
-      this.inspectRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.inspectRenderer.setPixelRatio((this.app && this.app.isTouchDevice) ? Math.min(window.devicePixelRatio, 1.25) : window.devicePixelRatio);
       inspectContainer.appendChild(this.inspectRenderer.domElement);
 
       this.inspectScene.add(new THREE.AmbientLight(0xffffff, 1.2));
