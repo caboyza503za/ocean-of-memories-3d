@@ -298,6 +298,7 @@ body {
   top: 20px;
   left: 20px;
   pointer-events: auto;
+  z-index: 50;
 }
 
 /* Mobile Controls */
@@ -616,6 +617,7 @@ body {
   display: flex;
   gap: 10px;
   pointer-events: auto;
+  z-index: 50;
 }
 
 .hud-top-center {
